@@ -1,0 +1,69 @@
+---
+title: "Practical Machine Learning Assignment"
+author: "Tan Kok Hui"
+date: "Saturday, May 24, 2015"
+output: html_document
+---
+
+Load libraries.
+
+```{r}
+library(caret)
+library(randomForest)
+```
+
+Load training and testing sets. Combine these sets, remove NA's and split back to training and testing data.
+
+```{r}
+#load and combine data
+trainset<-read.csv("pml-training.csv")
+testset<-read.csv("pml-testing.csv")
+classe<-trainset[,160]
+problem_id<-testset[,160]
+combine<-rbind(trainset[,-160], testset[,-160])
+
+#remove columns with NA
+combine<-combine[,colSums(is.na(combine)) == 0] 
+combine<-combine[,8:ncol(combine)] 
+
+#split back
+traindata<-combine[1:nrow(trainset),]
+testdata<-combine[(nrow(trainset)+1):nrow(combine),]
+traindata$classe<-classe
+testdata$problem_id<-problem_id
+```
+
+Split training data into training and validation data.
+
+```{r}
+set.seed(1)
+intrain<-createDataPartition(traindata$classe, p=0.7, list=FALSE)
+train<-traindata[intrain,]
+validate<-traindata[-intrain,]
+```
+
+Fit model.
+
+```{r}
+#This took about an hour!
+#fit<-train(classe~.,train,method="rf")
+#fit$finalModel
+
+#This took less than one minute!
+fit<-randomForest(classe~.,train)
+fit
+```
+
+Validate.
+
+```{r}
+prediction<-predict(fit, validate)
+table(prediction,validate$classe)
+```
+
+Run on test set.
+
+```{r}
+finalprediction<-predict(fit, testdata)
+finalprediction
+```
